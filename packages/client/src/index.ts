@@ -59,8 +59,18 @@ export class SemanticMemoryClient {
     // Ensure database directory exists
     await fs.mkdir(this.config.dbPath, { recursive: true });
     
-    // Initialize vector store
-    await this.vectorStore.initialize();
+    // Create index if it doesn't exist
+    try {
+      await this.vectorStore.createIndex({
+        indexName: 'semantic_memory',
+        dimension: this.config.embeddingDimensions
+      });
+    } catch (error: any) {
+      // Index might already exist, which is fine
+      if (!error.message?.includes('already exists')) {
+        console.warn('[SemanticMemory] Index creation warning:', error.message);
+      }
+    }
     
     this.initialized = true;
     console.log(`[SemanticMemory] Initialized with database at: ${this.config.dbPath}`);
@@ -76,15 +86,16 @@ export class SemanticMemoryClient {
     });
 
     // Store in vector database
-    await this.vectorStore.insert({
-      id: `${item.type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      values: embedding,
-      metadata: {
+    await this.vectorStore.upsert({
+      indexName: 'semantic_memory',
+      vectors: [embedding],
+      metadata: [{
         type: item.type,
         content: item.content,
         ...item.metadata,
         embedded_at: new Date().toISOString()
-      }
+      }],
+      ids: [`${item.type}_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`]
     });
   }
 
@@ -99,21 +110,21 @@ export class SemanticMemoryClient {
       values: items.map(item => item.content)
     });
 
-    // Insert all embeddings
-    const insertPromises = items.map(async (item, index) => {
-      await this.vectorStore.insert({
-        id: `${item.type}_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
-        values: embeddings[index],
-        metadata: {
-          type: item.type,
-          content: item.content,
-          ...item.metadata,
-          embedded_at: new Date().toISOString()
-        }
-      });
-    });
+    // Insert all embeddings using batch upsert
+    const ids = items.map((item, index) => `${item.type}_${Date.now()}_${index}_${Math.random().toString(36).substring(2, 11)}`);
+    const metadata = items.map(item => ({
+      type: item.type,
+      content: item.content,
+      ...item.metadata,
+      embedded_at: new Date().toISOString()
+    }));
 
-    await Promise.all(insertPromises);
+    await this.vectorStore.upsert({
+      indexName: 'semantic_memory',
+      vectors: embeddings,
+      metadata,
+      ids
+    });
   }
 
   async search(query: string, options: { limit?: number; threshold?: number } = {}): Promise<SearchResult[]> {
@@ -129,21 +140,21 @@ export class SemanticMemoryClient {
 
     // Search vector database
     const results = await this.vectorStore.query({
-      vector: embedding,
-      topK: limit
+      indexName: 'semantic_memory',
+      queryVector: embedding,
+      topK: limit,
+      minScore: threshold
     });
 
-    // Filter by threshold and format results
-    return results
-      .filter(result => result.score >= threshold)
-      .map(result => ({
-        content: result.metadata.content,
-        metadata: result.metadata,
-        similarity: result.score
-      }));
+    // Format results (filtering already done by minScore)
+    return results.map(result => ({
+      content: result.metadata?.content || '',
+      metadata: result.metadata || {},
+      similarity: result.score
+    }));
   }
 
-  async recall(category: string, query: string, options: RecallOptions = {}): Promise<SearchResult[]> {
+  async recall(category: string, query: string, options: Partial<RecallOptions> = {}): Promise<SearchResult[]> {
     await this.initialize();
 
     const { limit = 10, threshold = 0.7, contextWindow = 3 } = options;
