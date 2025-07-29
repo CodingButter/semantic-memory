@@ -1,15 +1,13 @@
 #!/usr/bin/env node
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { SemanticMemoryClient, EmbedItem } from '@semantic-memory/client';
 import * as path from 'path';
 
 const PROJECT_ROOT = process.env.PROJECT_ROOT || process.cwd();
-const SEMANTIC_MEMORY_DB_PATH = process.env.SEMANTIC_MEMORY_DB_PATH || path.join(PROJECT_ROOT, 'semantic_memory_db');
+const SEMANTIC_MEMORY_DB_PATH =
+  process.env.SEMANTIC_MEMORY_DB_PATH || path.join(PROJECT_ROOT, 'semantic_memory_db');
 
 class SemanticMemoryServer {
   private server: Server;
@@ -30,7 +28,7 @@ class SemanticMemoryServer {
 
     this.semanticMemory = new SemanticMemoryClient({
       dbPath: SEMANTIC_MEMORY_DB_PATH,
-      openAIApiKey: process.env.OPENAI_API_KEY
+      openAIApiKey: process.env.OPENAI_API_KEY,
     });
 
     this.setupToolHandlers();
@@ -48,21 +46,21 @@ class SemanticMemoryServer {
               properties: {
                 content: {
                   type: 'string',
-                  description: 'The text content to embed'
+                  description: 'The text content to embed',
                 },
                 type: {
                   type: 'string',
                   enum: ['chat', 'code', 'conversation', 'document'],
-                  description: 'The type of content being embedded'
+                  description: 'The type of content being embedded',
                 },
                 metadata: {
                   type: 'object',
                   description: 'Additional metadata to store with the embedding',
-                  additionalProperties: true
-                }
+                  additionalProperties: true,
+                },
               },
-              required: ['content', 'type']
-            }
+              required: ['content', 'type'],
+            },
           },
           {
             name: 'embed_batch',
@@ -76,22 +74,22 @@ class SemanticMemoryServer {
                     type: 'object',
                     properties: {
                       content: { type: 'string' },
-                      type: { 
+                      type: {
                         type: 'string',
-                        enum: ['chat', 'code', 'conversation', 'document']
+                        enum: ['chat', 'code', 'conversation', 'document'],
                       },
-                      metadata: { 
+                      metadata: {
                         type: 'object',
-                        additionalProperties: true
-                      }
+                        additionalProperties: true,
+                      },
                     },
-                    required: ['content', 'type']
+                    required: ['content', 'type'],
                   },
-                  description: 'Array of items to embed'
-                }
+                  description: 'Array of items to embed',
+                },
               },
-              required: ['items']
-            }
+              required: ['items'],
+            },
           },
           {
             name: 'semantic_search',
@@ -101,21 +99,21 @@ class SemanticMemoryServer {
               properties: {
                 query: {
                   type: 'string',
-                  description: 'The search query'
+                  description: 'The search query',
                 },
                 limit: {
                   type: 'number',
                   description: 'Maximum number of results to return',
-                  default: 10
+                  default: 10,
                 },
                 threshold: {
                   type: 'number',
                   description: 'Minimum similarity threshold (0-1)',
-                  default: 0.7
-                }
+                  default: 0.7,
+                },
               },
-              required: ['query']
-            }
+              required: ['query'],
+            },
           },
           {
             name: 'recall',
@@ -125,40 +123,41 @@ class SemanticMemoryServer {
               properties: {
                 category: {
                   type: 'string',
-                  description: 'Category to search in (chat-history, conversations, code, documents, or all)'
+                  description:
+                    'Category to search in (chat-history, conversations, code, documents, or all)',
                 },
                 query: {
                   type: 'string',
-                  description: 'What to recall'
+                  description: 'What to recall',
                 },
                 limit: {
                   type: 'number',
                   description: 'Maximum number of results',
-                  default: 10
+                  default: 10,
                 },
                 threshold: {
                   type: 'number',
                   description: 'Minimum similarity threshold',
-                  default: 0.7
+                  default: 0.7,
                 },
                 contextWindow: {
                   type: 'number',
                   description: 'Minutes of context to include around results',
-                  default: 3
-                }
+                  default: 3,
+                },
               },
-              required: ['category', 'query']
-            }
+              required: ['category', 'query'],
+            },
           },
           {
             name: 'get_stats',
             description: 'Get statistics about the semantic memory database',
             inputSchema: {
               type: 'object',
-              properties: {}
-            }
-          }
-        ]
+              properties: {},
+            },
+          },
+        ],
       };
     });
 
@@ -167,7 +166,11 @@ class SemanticMemoryServer {
 
       switch (name) {
         case 'embed_text': {
-          const { content, type, metadata = {} } = args as {
+          const {
+            content,
+            type,
+            metadata = {},
+          } = args as {
             content: string;
             type: 'chat' | 'code' | 'conversation' | 'document';
             metadata?: Record<string, any>;
@@ -180,9 +183,9 @@ class SemanticMemoryServer {
             content: [
               {
                 type: 'text',
-                text: `Successfully embedded ${type} content: "${content.substring(0, 100)}${content.length > 100 ? '...' : ''}"`
-              }
-            ]
+                text: `Successfully embedded ${type} content: "${content.substring(0, 100)}${content.length > 100 ? '...' : ''}"`,
+              },
+            ],
           };
         }
 
@@ -194,14 +197,18 @@ class SemanticMemoryServer {
             content: [
               {
                 type: 'text',
-                text: `Successfully embedded ${items.length} items into semantic memory`
-              }
-            ]
+                text: `Successfully embedded ${items.length} items into semantic memory`,
+              },
+            ],
           };
         }
 
         case 'semantic_search': {
-          const { query, limit = 10, threshold = 0.7 } = args as {
+          const {
+            query,
+            limit = 10,
+            threshold = 0.7,
+          } = args as {
             query: string;
             limit?: number;
             threshold?: number;
@@ -213,18 +220,26 @@ class SemanticMemoryServer {
             content: [
               {
                 type: 'text',
-                text: `Found ${results.length} results for "${query}":\n\n` +
-                      results.map((result, i) => 
-                        `${i + 1}. [${(result.similarity * 100).toFixed(1)}%] ${result.content.substring(0, 200)}${result.content.length > 200 ? '...' : ''}\n` +
-                        `   Metadata: ${JSON.stringify(result.metadata, null, 2)}`
-                      ).join('\n\n')
-              }
-            ]
+                text: `Found ${results.length} results for "${query}":\n\n${results
+                  .map(
+                    (result, i) =>
+                      `${i + 1}. [${(result.similarity * 100).toFixed(1)}%] ${result.content.substring(0, 200)}${result.content.length > 200 ? '...' : ''}\n` +
+                      `   Metadata: ${JSON.stringify(result.metadata, null, 2)}`
+                  )
+                  .join('\n\n')}`,
+              },
+            ],
           };
         }
 
         case 'recall': {
-          const { category, query, limit = 10, threshold = 0.7, contextWindow = 3 } = args as {
+          const {
+            category,
+            query,
+            limit = 10,
+            threshold = 0.7,
+            contextWindow = 3,
+          } = args as {
             category: string;
             query: string;
             limit?: number;
@@ -235,28 +250,29 @@ class SemanticMemoryServer {
           const results = await this.semanticMemory.recall(category, query, {
             limit,
             threshold,
-            contextWindow
+            contextWindow,
           });
 
           return {
             content: [
               {
                 type: 'text',
-                text: `Recalled ${results.length} memories from ${category} for "${query}":\n\n` +
-                      results.map((result, i) => {
-                        let text = `${i + 1}. [${(result.similarity * 100).toFixed(1)}%] ${result.content}\n`;
-                        text += `   Type: ${result.metadata.type}, Platform: ${result.metadata.platform || 'unknown'}\n`;
-                        text += `   Timestamp: ${result.metadata.timestamp || 'unknown'}\n`;
-                        if (result.metadata.username) {
-                          text += `   User: ${result.metadata.username}\n`;
-                        }
-                        if ((result as any).context?.length > 0) {
-                          text += `   Context: ${(result as any).context.length} surrounding messages\n`;
-                        }
-                        return text;
-                      }).join('\n')
-              }
-            ]
+                text: `Recalled ${results.length} memories from ${category} for "${query}":\n\n${results
+                  .map((result, i) => {
+                    let text = `${i + 1}. [${(result.similarity * 100).toFixed(1)}%] ${result.content}\n`;
+                    text += `   Type: ${result.metadata.type}, Platform: ${result.metadata.platform || 'unknown'}\n`;
+                    text += `   Timestamp: ${result.metadata.timestamp || 'unknown'}\n`;
+                    if (result.metadata.username) {
+                      text += `   User: ${result.metadata.username}\n`;
+                    }
+                    if ((result as any).context?.length > 0) {
+                      text += `   Context: ${(result as any).context.length} surrounding messages\n`;
+                    }
+                    return text;
+                  })
+                  .join('\n')}`,
+              },
+            ],
           };
         }
 
@@ -267,14 +283,14 @@ class SemanticMemoryServer {
             content: [
               {
                 type: 'text',
-                text: `Semantic Memory Statistics:\n\n` +
-                      `Total Embeddings: ${stats.totalEmbeddings}\n\n` +
-                      `Categories:\n` +
-                      Object.entries(stats.categories)
-                        .map(([category, count]) => `  ${category}: ${count}`)
-                        .join('\n')
-              }
-            ]
+                text:
+                  `Semantic Memory Statistics:\n\n` +
+                  `Total Embeddings: ${stats.totalEmbeddings}\n\n` +
+                  `Categories:\n${Object.entries(stats.categories)
+                    .map(([category, count]) => `  ${category}: ${count}`)
+                    .join('\n')}`,
+              },
+            ],
           };
         }
 
@@ -286,10 +302,10 @@ class SemanticMemoryServer {
 
   async run() {
     await this.semanticMemory.initialize();
-    
+
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    
+
     console.error('Semantic Memory MCP server running on stdio');
   }
 }
