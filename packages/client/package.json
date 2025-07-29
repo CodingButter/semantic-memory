@@ -1,0 +1,31 @@
+{
+  "name": "@semantic-memory/client",
+  "version": "1.0.0",
+  "description": "Semantic memory client library with Mastra vector database integration",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "test": "echo \"No tests configured\""
+  },
+  "keywords": [
+    "semantic-memory",
+    "embeddings",
+    "vector-database",
+    "mastra"
+  ],
+  "author": "Rusty Butter",
+  "license": "MIT",
+  "dependencies": {
+    "@ai-sdk/openai": "^0.0.66",
+    "@mastra/libsql": "^0.1.9",
+    "ai": "^4.0.35"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "typescript": "^5.8.3"
+  }
+}

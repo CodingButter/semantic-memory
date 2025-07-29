@@ -1,0 +1,24 @@
+{
+  "name": "@semantic-memory/monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Semantic memory system with Mastra integration for vector-based recall",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "pnpm --recursive run build",
+    "dev": "pnpm --recursive run dev",
+    "clean": "pnpm --recursive run clean",
+    "test": "pnpm --recursive run test"
+  },
+  "keywords": [
+    "semantic-memory",
+    "embeddings", 
+    "vector-database",
+    "mastra",
+    "rag"
+  ],
+  "author": "Rusty Butter",
+  "license": "MIT"
+}
